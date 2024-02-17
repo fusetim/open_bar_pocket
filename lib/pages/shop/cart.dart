@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
+import 'package:open_bar_pocket/pages/pin.dart';
 import 'package:provider/provider.dart';
 
 class CartTab extends StatelessWidget {
@@ -46,7 +47,12 @@ class CartTab extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => {},
+                  onPressed: () => {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PinPage()),
+                    )
+                  },
                   child: Text(
                     "POURSUIVRE",
                     style: TextStyle(
