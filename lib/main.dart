@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_bar_pocket/pages/auth.dart';
 import 'package:open_bar_pocket/pages/shop/structure.dart';
 
 void main() {
@@ -35,7 +36,11 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const ShoppingPage(),
+      initialRoute: '/shop',
+      routes: {
+        '/auth': (context) => AuthPage(),
+        '/shop': (context) => const ShoppingPage(),
+      },
     );
   }
 }

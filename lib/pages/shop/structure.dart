@@ -29,7 +29,25 @@ class _ShoppingState extends State<ShoppingPage> {
       case 1:
         return CartTab();
       default:
-        return Text('Selected page: ${_open}');
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "Profil",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            OutlinedButton(
+              onPressed: (){
+                Navigator.pushNamed(context, '/auth');
+              },
+              child: Text("Login"),
+            )
+          ],
+        );
     }
   }
 
