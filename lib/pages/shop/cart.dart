@@ -1,6 +1,8 @@
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:input_quantity/input_quantity.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/pages/pin.dart';
@@ -23,10 +25,31 @@ class CartTab extends StatelessWidget {
                         return null;
                       }
                       return ListTile(
-                        title: Text(value.items[index].$1.getName()),
-                        subtitle: Text("Quantité: ${value.items[index].$2}"),
+                        leading: InputQty(
+                          initVal: value.items[index].$2,
+                          minVal: 0,
+                          maxVal: 99,
+                          steps: 1,
+                          decoration: QtyDecorationProps(
+                            qtyStyle: QtyStyle.btnOnLeft,
+                            orientation: ButtonOrientation.vertical,
+                            btnColor: Colors.deepPurple,
+                          ),
+                          //qtyFormProps: QtyFormProps(enableTyping: false),
+                          onQtyChanged: (val) {
+                            value.setQuantity(value.items[index].$1, val.toInt());
+                          },
+                        ),
+                        title: Text("${value.items[index].$1.getName()}"),
+                        subtitle: Text(
+                          "${value.items[index].$1.getPrice(PriceRole.ceten)} € l'unité"),
                         trailing: Text(
-                            "${value.items[index].$1.getPrice(PriceRole.ceten)} €/u"),
+                          "${value.items[index].$1.getPrice(PriceRole.ceten) * value.items[index].$2} €",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       );
                     }));
           },

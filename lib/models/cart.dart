@@ -27,11 +27,33 @@ class CartModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setQuantity(Product item, int quantity) {
+    for (var (index, (it, qty)) in _items.indexed) {
+      if (it == item) {
+        if (quantity == 0) {
+          _items.removeAt(index);
+          _count -= quantity;
+          notifyListeners();
+          return;
+        }
+        _items[index] = (it, quantity);
+        _count += quantity - qty;
+        notifyListeners();
+        return;
+      }
+    }
+    _items.add((item, quantity));
+    _count += quantity;
+    notifyListeners();
+  }
+
   bool remove(Product item) {
     for (var (index, (it, qty)) in _items.indexed) {
       if (it == item) {
         if (qty > 1) {
           _items[index] = (it, qty - 1);
+        } else {
+          _items.removeAt(index);
         }
         _count -= 1;
         notifyListeners();
