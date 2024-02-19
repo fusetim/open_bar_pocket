@@ -45,7 +45,9 @@ android {
         applicationId "fr.fusetim.open_bar_pocket"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion flutter.minSdkVersion
+        //minSdkVersion flutter.minSdkVersion
+        // Due to Native_Dio_Adapter, minSqkVersion is 21+
+        minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
