@@ -4,29 +4,36 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'package:open_bar_pocket/api/controller.dart';
+import 'package:open_bar_pocket/models/account.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AuthPage extends StatefulWidget {
+  final ApiController _apiController;
+
+  const AuthPage(this._apiController, {super.key});
+
   @override
   State<StatefulWidget> createState() {
-    return AuthPageState();
+    return AuthPageState(_apiController);
   }
 }
 
 class AuthPageState extends State<AuthPage> {
-  final Dio _dioClient = Dio()..httpClientAdapter = NativeAdapter();
+  Future<Account>? _authRequest = null;
 
-  final Uri _auth_url = Uri.parse("https://bar.telecomnancy.net/api/auth/card");
-  static const String _local_token = "ceciestuneborne";
-
-  Future<Response<dynamic>>? _authRequest = null;
-
+  late TextEditingController _serverController;
   late TextEditingController _cardNumberController;
   late TextEditingController _pinController;
+  final ApiController _apiController;
+
+  AuthPageState(this._apiController);
 
   @override
   void initState() {
     super.initState();
+    _serverController = TextEditingController()
+      ..text = "https://bar.telecomnancy.net";
     _cardNumberController = TextEditingController();
     _pinController = TextEditingController();
   }
@@ -34,6 +41,7 @@ class AuthPageState extends State<AuthPage> {
   @override
   void dispose() {
     super.dispose();
+    _serverController.dispose();
     _cardNumberController.dispose();
     _pinController.dispose();
   }
@@ -42,15 +50,11 @@ class AuthPageState extends State<AuthPage> {
     if (_authRequest != null) {
       return;
     }
-    if (_cardNumberController.text.isEmpty || _pinController.text.isEmpty) {
+    if (_serverController.text.isEmpty ||
+        _cardNumberController.text.isEmpty ||
+        _pinController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Veuillez entrer un numéro de carte et un code PIN."),
-        action: SnackBarAction(
-          label: "Réessayer",
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
+        content: Text("Veuillez entrer les informations requises."),
       ));
       return;
     }
@@ -58,75 +62,26 @@ class AuthPageState extends State<AuthPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
             "Le numéro de carte doit contenir exactemement 14 caractères."),
-        action: SnackBarAction(
-          label: "Réessayer",
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
       ));
       return;
     }
-    // if (RegExp(r'([0-9a-fA-F]+)').hasMatch(_cardNumberController.text)) {
-    //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    //     content: Text(
-    //         "Le numéro de carte doit contenir uniquement les caractères 0-9 et a-f."),
-    //     action: SnackBarAction(
-    //       label: "Réessayer",
-    //       onPressed: () {
-    //         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    //       },
-    //     ),
-    //   ));
-    //   return;
-    // }
+    // TODO: Check that the card number is hexadecimal.
     setState(() {
-      _authRequest = _dioClient.postUri(_auth_url,
-          data: jsonEncode({
-            "card_id": _cardNumberController.text.toLowerCase(),
-            "card_pin": _pinController.text
-          }),
-          options: Options(headers: {
-            "X-Local-Token": _local_token,
-          }));
+      _apiController.setBaseUri(_serverController.text);
+      _authRequest = _apiController.updateApiConfig().then((_) {
+        return _apiController.connectByCard(
+            _cardNumberController.text.toLowerCase(), _pinController.text);
+      });
     });
-    _authRequest!.then((response) {
-      log("Auth response: ${response.data}");
-      if (response.statusCode == 200) {
-        log("Auth success: ${response.data}");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              "Connecté en tant que ${response.data["account"]["first_name"]} ${response.data["account"]["last_name"]}."),
-          action: SnackBarAction(
-            label: "Continuer",
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ));
-        Navigator.pushNamed(context, '/shop');
-      } else {
-        log("Auth failed: ${response.data}");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Authentification échouée."),
-          action: SnackBarAction(
-            label: "Réessayer",
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ));
-      }
+    _authRequest!.then((account) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Connecté en tant que ${account.getFullName()}."),
+      ));
+      Navigator.pushNamed(context, '/shop');
     }).catchError((error) {
       log("Auth error: $error");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Erreur lors de l'authentification."),
-        action: SnackBarAction(
-          label: "Réessayer",
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
       ));
     }).whenComplete(() {
       setState(() {
@@ -165,6 +120,19 @@ class AuthPageState extends State<AuthPage> {
                   children: [
                     TextFormField(
                       decoration: InputDecoration(
+                        labelText: "Serveur OpenBar",
+                        hintText: "Entrez l'URL du serveur OpenBar",
+                        prefixIcon: Icon(Icons.link),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      keyboardType: TextInputType.text,
+                      controller: _serverController,
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      decoration: InputDecoration(
                         labelText: "Numéro de carte",
                         hintText: "Entrez votre numéro de carte",
                         prefixIcon: Icon(Icons.credit_card),
@@ -173,18 +141,6 @@ class AuthPageState extends State<AuthPage> {
                         ),
                       ),
                       keyboardType: TextInputType.text,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Veuillez entrer un numéro de carte valide.";
-                        }
-                        if (value.length < 14 || value.length > 14) {
-                          return "Le numéro de carte doit contenir exactemement 14 caractères.";
-                        }
-                        if (RegExp(r'([0-9a-fA-F]+)').hasMatch(value)) {
-                          return "Le numéro de carte doit contenir uniquement les caractères 0-9 et a-f.";
-                        }
-                        return null;
-                      },
                       controller: _cardNumberController,
                     ),
                     SizedBox(height: 16),

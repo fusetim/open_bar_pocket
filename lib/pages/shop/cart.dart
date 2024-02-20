@@ -3,12 +3,17 @@ import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:input_quantity/input_quantity.dart';
+import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/pages/pin.dart';
 import 'package:provider/provider.dart';
 
 class CartTab extends StatelessWidget {
+  final ApiController _api;
+
+  const CartTab(this._api, {super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -37,12 +42,13 @@ class CartTab extends StatelessWidget {
                           ),
                           //qtyFormProps: QtyFormProps(enableTyping: false),
                           onQtyChanged: (val) {
-                            value.setQuantity(value.items[index].$1, val.toInt());
+                            value.setQuantity(
+                                value.items[index].$1, val.toInt());
                           },
                         ),
                         title: Text("${value.items[index].$1.getName()}"),
                         subtitle: Text(
-                          "${value.items[index].$1.getPrice(PriceRole.ceten)} € l'unité"),
+                            "${value.items[index].$1.getPrice(PriceRole.ceten)} € l'unité"),
                         trailing: Text(
                           "${value.items[index].$1.getPrice(PriceRole.ceten) * value.items[index].$2} €",
                           style: TextStyle(

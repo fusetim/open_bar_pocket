@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/models/product.dart';
@@ -7,20 +8,22 @@ import 'package:provider/provider.dart';
 import '../../models/category.dart';
 
 class Menu extends StatefulWidget {
+  final ApiController _api;
+
+  const Menu(this._api, {super.key});
+
   @override
   State<StatefulWidget> createState() {
-    return MenuState();
+    return MenuState(_api);
   }
 }
 
 class MenuState extends State<Menu> {
-  static const _categories = [
-    const Category(name: "Pizza"),
-    const Category(name: "Plat du bar"),
-    const Category(name: "Plats préparés"),
-    const Category(name: "Boissons"),
-    const Category(name: "Friandises"),
-  ];
+  final ApiController _api;
+
+  late Future<List<Category>> _categories;
+
+  MenuState(this._api);
 
   static final _products = [
     Product.uniquePrice("Vosgien", 2.95),
@@ -43,18 +46,44 @@ class MenuState extends State<Menu> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _categories = _api.getCategories();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (_selectedCategory == null) {
-      return _CategorySelector(
-          categories: _categories, onSelection: onCategorySelection);
-    } else {
-      return PopScope(
-        canPop: false,
-        onPopInvoked: (_) => returnToCategories(),
-        child:
-            _ProductList(products: _products, catName: _categories[_selectedCategory ?? 0].getName(), onBackPress: returnToCategories),
-      );
-    }
+    return FutureBuilder(
+        future: _categories,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            if (_selectedCategory == null) {
+              return _CategorySelector(
+                  categories: snapshot.data!, onSelection: onCategorySelection);
+            } else {
+              return PopScope(
+                canPop: false,
+                onPopInvoked: (_) => returnToCategories(),
+                child: _ProductList(
+                    products: _products,
+                    catName: snapshot.data![_selectedCategory ?? 0].getName(),
+                    onBackPress: returnToCategories),
+              );
+            }
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text("Oops, an error has occured: ${snapshot.error}"),
+            );
+          } else {
+            return const Center(
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+        });
   }
 }
 
@@ -113,7 +142,11 @@ class _ProductList extends StatelessWidget {
   final List<Product> products;
   final void Function()? onBackPress;
 
-  const _ProductList({super.key, required this.catName, required this.products, this.onBackPress});
+  const _ProductList(
+      {super.key,
+      required this.catName,
+      required this.products,
+      this.onBackPress});
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +170,8 @@ class _ProductList extends StatelessWidget {
                 }
                 return InkWell(
                   onTap: () => {
-                    Provider.of<CartModel>(context, listen: false).add(products[index])
+                    Provider.of<CartModel>(context, listen: false)
+                        .add(products[index])
                   },
                   borderRadius: BorderRadius.circular(8.0),
                   child: Container(
@@ -164,7 +198,7 @@ class _ProductList extends StatelessWidget {
                           maxLines: 2,
                         ),
                         Text(
-                          products[index].getFormattedPrice(PriceRole.vip),
+                          products[index].getFormattedPrice(PriceRole.coutant),
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,

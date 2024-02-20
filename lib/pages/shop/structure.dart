@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/pages/shop/cart.dart';
 import 'package:open_bar_pocket/pages/shop/menu.dart';
 import 'package:provider/provider.dart';
 
 class ShoppingPage extends StatefulWidget {
-  const ShoppingPage({super.key});
+  final ApiController _api;
+
+  const ShoppingPage(this._api, {super.key});
 
   @override
   State<StatefulWidget> createState() {
-    return _ShoppingState();
+    return _ShoppingState(_api);
   }
 }
 
 class _ShoppingState extends State<ShoppingPage> {
+  final ApiController _api;
+  
   int _open = 0;
+
+  _ShoppingState(this._api);
 
   void onDestinationChange(int value) {
     setState(() {
@@ -25,9 +32,9 @@ class _ShoppingState extends State<ShoppingPage> {
   Widget? childBuild() {
     switch (_open) {
       case 0:
-        return Menu();
+        return Menu(_api);
       case 1:
-        return CartTab();
+        return CartTab(_api);
       default:
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -41,7 +48,7 @@ class _ShoppingState extends State<ShoppingPage> {
               ),
             ),
             OutlinedButton(
-              onPressed: (){
+              onPressed: () {
                 Navigator.pushNamed(context, '/auth');
               },
               child: Text("Login"),

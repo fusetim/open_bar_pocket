@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/pages/auth.dart';
 import 'package:open_bar_pocket/pages/shop/structure.dart';
 
 void main() {
-  runApp(const MyApp());
+  ApiController api = ApiController();
+  runApp(MyApp(api));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ApiController _api;
+
+  const MyApp(this._api, {super.key});
 
   // This widget is the root of your application.
   @override
@@ -36,10 +40,10 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: '/shop',
+      initialRoute: '/auth',
       routes: {
-        '/auth': (context) => AuthPage(),
-        '/shop': (context) => const ShoppingPage(),
+        '/auth': (context) => AuthPage(_api),
+        '/shop': (context) => ShoppingPage(_api),
       },
     );
   }
