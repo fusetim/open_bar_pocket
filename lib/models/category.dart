@@ -1,27 +1,22 @@
+import 'dart:typed_data';
+
 class Category {
   final String name;
   final String id;
-  final String? picture_uri;
+  final Uint8List? picture_data;
 
   const Category({
     required this.name,
     required this.id,
-    this.picture_uri,
+    required this.picture_data,
   });
-
-  factory Category.fromJson(Map<String, dynamic> data) {
-    return Category(
-        name: data["name"]! as String,
-        id: data["id"]! as String,
-        picture_uri: data["picture_uri"]! as String);
-  }
 
   String getName() {
     return name;
   }
 
   bool hasPicture() {
-    return picture_uri != null;
+    return picture_data != null;
   }
 
   @override

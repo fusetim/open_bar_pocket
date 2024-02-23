@@ -77,7 +77,7 @@ class AuthPageState extends State<AuthPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Connecté en tant que ${account.getFullName()}."),
       ));
-      Navigator.pushNamed(context, '/shop');
+      Navigator.pushReplacementNamed(context, '/shop');
     }).catchError((error) {
       log("Auth error: $error");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

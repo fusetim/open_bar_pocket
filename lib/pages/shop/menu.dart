@@ -108,14 +108,23 @@ class _CategorySelector extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.0),
             child: Container(
               margin: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colors.purple[200]!,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AspectRatio(
                     aspectRatio: 1.0,
-                    child: Placeholder(
-                      fallbackWidth: 50,
-                      fallbackHeight: 100,
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: categories[index].hasPicture()
+                          ? Image.memory(categories[index].picture_data!)
+                          : const Placeholder(),
                     ),
                   ),
                   const SizedBox(height: 4),

@@ -1,15 +1,18 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:open_bar_pocket/models/account.dart';
 import 'package:open_bar_pocket/models/category.dart';
 
 class ApiController {
   final Dio _httpClient = Dio()..httpClientAdapter = NativeAdapter();
+  final DefaultCacheManager _cache = DefaultCacheManager();
 
   String? baseUrl = null;
   OpenBarConfig? _config = null;
@@ -83,15 +86,50 @@ class ApiController {
     });
   }
 
+  Future<Uint8List> getPicture(String uri) async {
+    if (!isReady()) {
+      throw Exception("ApiController is not ready yet!");
+    }
+
+    String url = _config!.getApiUrlFor(uri);
+    //FileInfo? fi = await _cache.getFileFromCache(url);
+    //if (fi != null) {
+    //  return await fi.file.readAsBytes();
+    //}
+
+    return await _httpClient
+        .get(url, options: Options(responseType: ResponseType.bytes))
+        .then((resp) {
+      if (resp.statusCode == 200) {
+        Uint8List data = Uint8List.fromList(resp.data);
+        //_cache.putFile(url, data, key: url, eTag: resp.headers.value("etag"));
+        return data;
+      } else {
+        throw Exception(
+            "Request failed with status ${resp.statusCode}; ${resp.data}");
+      }
+    });
+  }
+
   Future<List<Category>> getCategories() {
     if (!isReady()) {
       throw Exception("ApiController is not ready yet!");
     }
 
-    return _httpClient.get(_config!.getApiUrlFor("categories")).then((resp) {
+    return _httpClient
+        .get(_config!.getApiUrlFor("categories"))
+        .then((resp) async {
       if (resp.statusCode == 200) {
-        List<dynamic> cats = resp.data;
-        return cats.map((e) => Category.fromJson(e)).toList(growable: false);
+        List<dynamic> cats_data = resp.data;
+        List<Category> cats = List.empty(growable: true);
+        for (var c in cats_data) {
+          Uint8List? picture = await getPicture(c["picture_uri"])
+              .then((value) => value as Uint8List?)
+              .onError((_, __) => null);
+          cats.add(
+              Category(name: c["name"], id: c["id"], picture_data: picture));
+        }
+        return cats;
       } else {
         throw Exception(
             "Request failed with status ${resp.statusCode}; ${resp.data}");
@@ -109,6 +147,9 @@ class OpenBarConfig {
       this.api_endpoint, this.websocket_endpoint, this.local_token);
 
   String getApiUrlFor(String path) {
+    if (path.startsWith("/")) {
+      path = path.substring(1);
+    }
     return "$api_endpoint/$path";
   }
 }
