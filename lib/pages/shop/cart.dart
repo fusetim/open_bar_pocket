@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -33,7 +34,7 @@ class CartTab extends StatelessWidget {
                         leading: InputQty(
                           initVal: value.items[index].$2,
                           minVal: 0,
-                          maxVal: 99,
+                          maxVal: min(value.items[index].$1.buyLimit ?? 99, value.items[index].$1.amountLeft ?? 99),
                           steps: 1,
                           decoration: QtyDecorationProps(
                             qtyStyle: QtyStyle.btnOnLeft,
@@ -48,9 +49,9 @@ class CartTab extends StatelessWidget {
                         ),
                         title: Text("${value.items[index].$1.getName()}"),
                         subtitle: Text(
-                            "${value.items[index].$1.getPrice(PriceRole.ceten)} € l'unité"),
+                            "${value.items[index].$1.getFormattedPrice(PriceRole.coutant)} l'unité"),
                         trailing: Text(
-                          "${value.items[index].$1.getPrice(PriceRole.ceten) * value.items[index].$2} €",
+                          "${value.items[index].$1.getFormattedPrice(PriceRole.coutant, quantity: value.items[index].$2)}",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -68,7 +69,7 @@ class CartTab extends StatelessWidget {
               children: [
                 Consumer<CartModel>(
                   builder: (context, value, child) => Text(
-                    "TOTAL: ${value.calculatePrice(PriceRole.ceten)} €",
+                    "TOTAL: ${value.calculateFormattedPrice(PriceRole.coutant)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 18,

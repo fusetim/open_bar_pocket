@@ -1,39 +1,48 @@
+import 'dart:ffi';
+import 'dart:typed_data';
+
+import 'package:intl/intl.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 
 class Product {
-  final String? ident;
+  final String id;
   final String name;
-  final String? description;
-  final List<double> prices;
+  final int? amountLeft;
+  final int? buyLimit;
+  final Uint8List? pictureData;
+  final List<int> prices;
 
-  const Product(this.name,
-      {this.description, this.ident, required this.prices});
-
-  Product.uniquePrice(this.name, double price)
-      : ident = null,
-        description = null,
-        prices = List.filled(PriceRole.length, price, growable: false);
+  const Product(
+      {required this.id,
+      required this.name,
+      required this.prices,
+      this.amountLeft,
+      this.buyLimit,
+      this.pictureData});
 
   String getName() {
     return name;
   }
 
-  double getPrice(PriceRole role) {
+  int getPrice(PriceRole role) {
     return prices[role.index];
   }
 
-  String getFormattedPrice(PriceRole role) {
-    double price = prices[role.index];
-    return "$price EUR";
+  String getFormattedPrice(PriceRole role, {int quantity = 1}) {
+    int price = prices[role.index];
+    var fnb = NumberFormat("##0.00€", 'fr_FR');
+    return fnb.format(price.toDouble() / 100.0 * quantity);
+  }
+
+  bool hasPicture() {
+    return pictureData != null;
   }
 
   @override
   bool operator ==(Object other) {
-    return other is Product &&
-        other.ident == ident &&
-        other.name == name;
+    return other is Product && other.id == id && other.name == name;
   }
 
   @override
-  int get hashCode => Object.hash(ident, name);
+  int get hashCode => Object.hash(id, name);
 }

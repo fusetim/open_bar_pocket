@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:cookie_jar/cookie_jar.dart';
@@ -9,6 +10,8 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:open_bar_pocket/models/account.dart';
 import 'package:open_bar_pocket/models/category.dart';
+import 'package:open_bar_pocket/models/price_role.dart';
+import 'package:open_bar_pocket/models/product.dart';
 
 class ApiController {
   final Dio _httpClient = Dio()..httpClientAdapter = NativeAdapter();
@@ -135,6 +138,42 @@ class ApiController {
             "Request failed with status ${resp.statusCode}; ${resp.data}");
       }
     });
+  }
+
+  Future<List<Product>> getProducts(String category_id,
+      {int page = 0, int limit = 20, String? state = "buyable"}) async {
+    if (!isReady()) {
+      throw Exception("ApiController is not ready yet!");
+    }
+    String state_param = state == null ? "" : "&state=$state";
+    var resp = await _httpClient.get(_config!.getApiUrlFor(
+        "categories/$category_id/items?page=$page&limit=$limit$state_param"));
+    if (resp.statusCode != 200) {
+      throw Exception(
+          "Failed to get products for category `$category_id`, status: ${resp.statusCode}, body: ${resp.data}");
+    }
+    List<dynamic> items = resp.data["items"];
+    List<Product> products = List.empty(growable: true);
+    for (Map<String, dynamic> item in items) {
+      Map<String, dynamic> rPrices = item["prices"];
+      List<int> prices = List.filled(PriceRole.length, 0);
+      for (var p in rPrices.entries) {
+        PriceRole pr = PriceRole.fromText(p.key);
+        prices[pr.index] = p.value;
+      }
+      Uint8List? pictureData = await getPicture(item["picture_uri"])
+          .then((value) => value as Uint8List?)
+          .onError((_, __) => null);
+      var prod = Product(
+          id: item["id"],
+          name: item["name"],
+          prices: prices,
+          amountLeft: item["amount_left"],
+          buyLimit: item["buy_limit"],
+          pictureData: pictureData);
+      products.add(prod);
+    }
+    return products;
   }
 }
 

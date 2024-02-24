@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/models/product.dart';
 
@@ -73,11 +74,16 @@ class CartModel extends ChangeNotifier {
     return _count;
   }
 
-  double calculatePrice(PriceRole role) {
-    double price = 0;
+  int calculatePrice(PriceRole role) {
+    int price = 0;
     for (var (it, qty) in _items) {
       price += it.getPrice(role) * qty;
     }
     return price;
+  }
+
+  String calculateFormattedPrice(PriceRole role) {
+    var fnb = NumberFormat("##0.00€", "fr_FR");
+    return fnb.format((calculatePrice(role).toDouble()) / 100);
   }
 }

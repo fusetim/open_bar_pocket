@@ -25,13 +25,7 @@ class MenuState extends State<Menu> {
 
   MenuState(this._api);
 
-  static final _products = [
-    Product.uniquePrice("Vosgien", 2.95),
-    Product.uniquePrice("Lance-roquette", 2.75),
-    Product.uniquePrice("Athénien", 2.25),
-  ];
-
-  int? _selectedCategory = null;
+  int? _selectedCategory;
 
   void onCategorySelection(int index) {
     setState(() {
@@ -64,8 +58,8 @@ class MenuState extends State<Menu> {
               return PopScope(
                 canPop: false,
                 onPopInvoked: (_) => returnToCategories(),
-                child: _ProductList(
-                    products: _products,
+                child: _ProductList(_api,
+                    catId: snapshot.data![_selectedCategory ?? 0].id,
                     catName: snapshot.data![_selectedCategory ?? 0].getName(),
                     onBackPress: returnToCategories),
               );
@@ -105,9 +99,9 @@ class _CategorySelector extends StatelessWidget {
           }
           return InkWell(
             onTap: () => onSelection(index),
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(4.0),
             child: Container(
-              margin: const EdgeInsets.all(8.0),
+              margin: const EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 border: Border.all(
                   color: Colors.purple[200]!,
@@ -128,16 +122,18 @@ class _CategorySelector extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    categories[index].getName(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  )
+                  Hero(
+                      tag: "catName",
+                      child: Text(
+                        categories[index].getName(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ))
                 ],
               ),
             ),
@@ -147,15 +143,15 @@ class _CategorySelector extends StatelessWidget {
 }
 
 class _ProductList extends StatelessWidget {
+  final ApiController _api;
+  final String catId;
   final String catName;
-  final List<Product> products;
   final void Function()? onBackPress;
+  final Future<List<Product>> _products;
 
-  const _ProductList(
-      {super.key,
-      required this.catName,
-      required this.products,
-      this.onBackPress});
+  _ProductList(this._api,
+      {super.key, required this.catId, required this.catName, this.onBackPress})
+      : _products = _api.getProducts(catId);
 
   @override
   Widget build(BuildContext context) {
@@ -163,65 +159,115 @@ class _ProductList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppBar(
-          title: Text(catName, style: TextStyle(fontSize: 18)),
+          title: Hero(
+              tag: "catName",
+              child: Text(catName, style: TextStyle(fontSize: 18))),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: onBackPress,
           ),
         ),
-        Expanded(
-          child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 150, childAspectRatio: 0.6),
-              itemBuilder: (context, index) {
-                if (index >= products.length) {
-                  return null;
-                }
-                return InkWell(
-                  onTap: () => {
-                    Provider.of<CartModel>(context, listen: false)
-                        .add(products[index])
-                  },
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: Container(
-                    margin: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1.0,
-                          child: Placeholder(
-                            fallbackWidth: 50,
-                            fallbackHeight: 100,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          products[index].getName(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                        Text(
-                          products[index].getFormattedPrice(PriceRole.coutant),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ),
+        FutureBuilder(
+            future: _products,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Expanded(
+                  child: GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 150, childAspectRatio: 0.7),
+                      itemBuilder: (context, index) {
+                        if (index >= snapshot.data!.length) {
+                          return null;
+                        }
+                        var image_stack = [
+                          snapshot.data![index].hasPicture()
+                              ? Image.memory(
+                                  snapshot.data![index].pictureData!,
+                                  fit: BoxFit.scaleDown,
+                                )
+                              : const Placeholder(),
+                        ];
+                        if ((snapshot.data![index].amountLeft ?? 0) <= 0) {
+                          image_stack.add(Image.network(
+                              "https://bar.telecomnancy.net/epuise.webp"));
+                        }
+                        ;
+
+                        return InkWell(
+                          onTap: () => {
+                            Provider.of<CartModel>(context, listen: false)
+                                .add(snapshot.data![index])
+                          },
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: Container(
+                              margin: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.purple[200]!,
+                                  width: 1.0,
+                                ),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    AspectRatio(
+                                      aspectRatio: 1.0,
+                                      child: Stack(
+                                        alignment: AlignmentDirectional.center,
+                                        children: image_stack,
+                                      ),
+                                    ),
+                                    Column(
+                                      children: [
+                                        Text(
+                                          snapshot.data![index].getName(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 12,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 2,
+                                        ),
+                                        Text(
+                                          snapshot.data![index]
+                                              .getFormattedPrice(
+                                                  PriceRole.coutant),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 2,
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              )),
+                        );
+                      }),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text("Oops, an error has occured: ${snapshot.error}"),
+                );
+              } else {
+                return const Center(
+                  child: SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: CircularProgressIndicator(),
                   ),
                 );
-              }),
-        ),
+              }
+            }),
       ],
     );
   }
