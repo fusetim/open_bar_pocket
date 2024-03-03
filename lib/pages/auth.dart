@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account.dart';
+import 'package:open_bar_pocket/pages/shop/structure.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AuthPage extends StatefulWidget {
@@ -77,7 +78,12 @@ class AuthPageState extends State<AuthPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Connecté en tant que ${account.getFullName()}."),
       ));
-      Navigator.pushReplacementNamed(context, '/shop');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ShoppingPage(_apiController, account: account),
+        ),
+      );
     }).catchError((error) {
       log("Auth error: $error");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 
 class Account {
@@ -45,4 +46,15 @@ class Account {
   String getFullName() {
     return "$first_name ${last_name.toUpperCase()}";
   }
+
+  String getFormattedBalance() {
+    var fnb = NumberFormat("##0.00€", 'fr_FR');
+    return fnb.format(balance.toDouble() / 100.0);
+  }
+
+  String getFormattedPoints() {
+    var fnb = NumberFormat("##0.00€pts", 'fr_FR');
+    return fnb.format(points.toDouble() / 100.0);
+  }
+
 }

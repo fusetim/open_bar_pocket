@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:open_bar_pocket/api/controller.dart';
+import 'package:open_bar_pocket/models/account.dart';
+import 'package:open_bar_pocket/models/account_notifier.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/pages/shop/cart.dart';
 import 'package:open_bar_pocket/pages/shop/menu.dart';
+import 'package:open_bar_pocket/pages/shop/profile.dart';
 import 'package:provider/provider.dart';
 
 class ShoppingPage extends StatefulWidget {
   final ApiController _api;
+  final Account account;
 
-  const ShoppingPage(this._api, {super.key});
+  const ShoppingPage(this._api, {super.key, required this.account});
 
   @override
   State<StatefulWidget> createState() {
-    return _ShoppingState(_api);
+    return _ShoppingState(_api, account: account);
   }
 }
 
 class _ShoppingState extends State<ShoppingPage> {
   final ApiController _api;
-  
+  final AccountNotifier _acc_notif;
+
   int _open = 0;
 
-  _ShoppingState(this._api);
+  _ShoppingState(this._api, {required Account account})
+      : _acc_notif = AccountNotifier(account);
 
   void onDestinationChange(int value) {
     setState(() {
@@ -36,60 +42,44 @@ class _ShoppingState extends State<ShoppingPage> {
       case 1:
         return CartTab(_api);
       default:
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              "Profil",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/auth');
-              },
-              child: Text("Login"),
-            )
-          ],
-        );
+        return ProfileTab(_api);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (ctx) => CartModel(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('OpenBar'),
-          elevation: 8,
-        ),
-        body: childBuild(),
-        bottomNavigationBar: NavigationBar(
-          destinations: [
-            NavigationDestination(
-                icon: Icon(Icons.restaurant_menu), label: "Carte"),
-            NavigationDestination(
-                icon: Consumer<CartModel>(
-                  builder:
-                      (BuildContext context, CartModel cart, Widget? child) {
-                    return Badge.count(
-                      count: cart.itemCount(),
-                      child: const Icon(Icons.shopping_cart),
-                    );
-                  },
-                ),
-                label: "Panier"),
-            NavigationDestination(
-                icon: Icon(Icons.co_present_outlined), label: "Profil"),
-          ],
-          onDestinationSelected: onDestinationChange,
-          selectedIndex: _open,
-        ),
-      ),
-    );
+        create: (ctx) => _acc_notif,
+        child: ChangeNotifierProvider(
+          create: (ctx) => CartModel(),
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('OpenBar'),
+              elevation: 8,
+            ),
+            body: childBuild(),
+            bottomNavigationBar: NavigationBar(
+              destinations: [
+                NavigationDestination(
+                    icon: Icon(Icons.restaurant_menu), label: "Carte"),
+                NavigationDestination(
+                    icon: Consumer<CartModel>(
+                      builder: (BuildContext context, CartModel cart,
+                          Widget? child) {
+                        return Badge.count(
+                          count: cart.itemCount(),
+                          child: const Icon(Icons.shopping_cart),
+                        );
+                      },
+                    ),
+                    label: "Panier"),
+                NavigationDestination(
+                    icon: Icon(Icons.co_present_outlined), label: "Profil"),
+              ],
+              onDestinationSelected: onDestinationChange,
+              selectedIndex: _open,
+            ),
+          ),
+        ));
   }
 }

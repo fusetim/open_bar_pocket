@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:open_bar_pocket/api/controller.dart';
+import 'package:open_bar_pocket/models/account_notifier.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/models/product.dart';
@@ -234,18 +235,23 @@ class _ProductList extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 2,
                                         ),
-                                        Text(
-                                          snapshot.data![index]
-                                              .getFormattedPrice(
-                                                  PriceRole.coutant),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 2,
-                                        ),
+                                        Consumer<AccountNotifier>(
+                                            builder: (ctx, acc, _) {
+                                          PriceRole accPriceRole =
+                                              acc.account.price_role;
+                                          return Text(
+                                            snapshot.data![index]
+                                                .getFormattedPrice(
+                                                    PriceRole.coutant),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                          );
+                                        }),
                                       ],
                                     )
                                   ],

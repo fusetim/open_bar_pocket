@@ -26,4 +26,24 @@ enum PriceRole {
         throw Exception("Unknown price role!");
     }
   }
+
+  @override
+  String toString() {
+    switch (this) {
+      case PriceRole.externe:
+        return "Externe";
+      case PriceRole.ceten:
+        return "CETEN";
+      case PriceRole.menu:
+        return "Menu";
+      case PriceRole.staff_bar:
+        return "Staff";
+      case PriceRole.privilegies:
+        return "VIP";
+      case PriceRole.coutant:
+        return "Coutant";
+      default:
+        return "Unknown";
+    }
+  }
 }

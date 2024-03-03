@@ -43,7 +43,6 @@ class MyApp extends StatelessWidget {
       initialRoute: '/auth',
       routes: {
         '/auth': (context) => AuthPage(_api),
-        '/shop': (context) => ShoppingPage(_api),
       },
     );
   }
