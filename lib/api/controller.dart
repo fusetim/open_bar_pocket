@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:ffi';
@@ -174,6 +175,42 @@ class ApiController {
       products.add(prod);
     }
     return products;
+  }
+
+  Future<()> newTransaction(UnmodifiableListView<(Product, int)> items, String pin) {
+    if (!isReady()) {
+      throw Exception("ApiController is not ready yet!");
+    }
+
+    List<Map<String, dynamic>> itemsData = List.empty(growable: true);
+    for (var (p, q) in items) {
+      itemsData.add({"item_id": p.id, "amount": q});
+    }
+    var req = _httpClient.post(_config!.getApiUrlFor("account/transactions"),
+        data: jsonEncode({"items": itemsData, "card_pin": pin}));
+    return req.then((resp) {
+      if (resp.statusCode == 201) {
+        return ();
+      } else {
+        throw Exception(
+            "Failed to create transaction, status: ${resp.statusCode}, body: ${resp.data}");
+      }
+    });
+  }
+
+  Future<Account> getMyAccount() {
+    if (!isReady()) {
+      throw Exception("ApiController is not ready yet!");
+    }
+
+    return _httpClient.get(_config!.getApiUrlFor("account")).then((resp) {
+      if (resp.statusCode == 200) {
+        return Account.fromJson(resp.data);
+      } else {
+        throw Exception(
+            "Failed to get account, status: ${resp.statusCode}, body: ${resp.data}");
+      }
+    });
   }
 }
 

@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ffi';
 import 'dart:math';
 
@@ -8,6 +9,7 @@ import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account_notifier.dart';
 import 'package:open_bar_pocket/models/cart.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
+import 'package:open_bar_pocket/models/product.dart';
 import 'package:open_bar_pocket/pages/pin.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +17,50 @@ class CartTab extends StatelessWidget {
   final ApiController _api;
 
   const CartTab(this._api, {super.key});
+
+  void onNewTransaction(BuildContext context) async {
+    UnmodifiableListView<(Product, int)> cart = context.read<CartModel>().items;
+
+    if (cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Votre panier est vide !"),
+      ));
+      return;
+    }
+
+    String? pin = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PinPage(),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (pin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Transaction annulée !"),
+      ));
+      return;
+    }
+
+    try {
+      await _api
+        .newTransaction(cart, pin)
+        .then((value) => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Transaction effectuée avec succès !"),
+            ),
+          ));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors de la transaction : ${e.toString()}"),
+        ),
+      );
+    }    
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,12 +134,7 @@ class CartTab extends StatelessWidget {
                   );
                 }),
                 TextButton(
-                  onPressed: () => {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => PinPage()),
-                    )
-                  },
+                  onPressed: () => onNewTransaction(context),
                   child: Text(
                     "POURSUIVRE",
                     style: TextStyle(
