@@ -47,11 +47,15 @@ class CartTab extends StatelessWidget {
     try {
       await _api
         .newTransaction(cart, pin)
-        .then((value) => ScaffoldMessenger.of(context).showSnackBar(
+        .then((value) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Transaction effectuée avec succès !"),
+              content: Text("Transaction réussie !"),
             ),
-          ));
+          );
+          context.read<CartModel>().clear();
+        });
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

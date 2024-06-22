@@ -33,7 +33,7 @@ class CartModel extends ChangeNotifier {
       if (it == item) {
         if (quantity == 0) {
           _items.removeAt(index);
-          _count -= quantity;
+          _count -= qty;
           notifyListeners();
           return;
         }
@@ -68,6 +68,10 @@ class CartModel extends ChangeNotifier {
     items.clear();
     _count = 0;
     notifyListeners();
+  }
+
+  void clear() {
+    return removeAll();
   }
 
   int itemCount() {
