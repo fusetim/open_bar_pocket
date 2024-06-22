@@ -3,6 +3,7 @@ import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account.dart';
 import 'package:open_bar_pocket/models/account_notifier.dart';
 import 'package:open_bar_pocket/models/cart.dart';
+import 'package:open_bar_pocket/models/orders_notifier.dart';
 import 'package:open_bar_pocket/pages/shop/cart.dart';
 import 'package:open_bar_pocket/pages/shop/menu.dart';
 import 'package:open_bar_pocket/pages/shop/profile.dart';
@@ -23,6 +24,7 @@ class ShoppingPage extends StatefulWidget {
 class _ShoppingState extends State<ShoppingPage> {
   final ApiController _api;
   final AccountNotifier _acc_notif;
+  final OrdersNotifier _orders_notif = OrdersNotifier([]);
 
   int _open = 0;
 
@@ -51,35 +53,42 @@ class _ShoppingState extends State<ShoppingPage> {
     return ChangeNotifierProvider(
         create: (ctx) => _acc_notif,
         child: ChangeNotifierProvider(
-          create: (ctx) => CartModel(),
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text('OpenBar'),
-              elevation: 8,
+          create: (ctx) {
+            _api.getLastOrders().then((value) {
+              _orders_notif.set(value.orders);
+            });
+            return _orders_notif;
+          },
+          child: ChangeNotifierProvider(
+            create: (ctx) => CartModel(),
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text('OpenBar'),
+                elevation: 8,
+              ),
+              body: childBuild(),
+              bottomNavigationBar: NavigationBar(
+                destinations: [
+                  NavigationDestination(
+                      icon: Icon(Icons.restaurant_menu), label: "Carte"),
+                  NavigationDestination(
+                      icon: Consumer<CartModel>(
+                        builder: (BuildContext context, CartModel cart,
+                            Widget? child) {
+                          return Badge.count(
+                            count: cart.itemCount(),
+                            child: const Icon(Icons.shopping_cart),
+                          );
+                        },
+                      ),
+                      label: "Panier"),
+                  NavigationDestination(
+                      icon: Icon(Icons.co_present_outlined), label: "Profil"),
+                ],
+                onDestinationSelected: onDestinationChange,
+                selectedIndex: _open,
+              ),
             ),
-            body: childBuild(),
-            bottomNavigationBar: NavigationBar(
-              destinations: [
-                NavigationDestination(
-                    icon: Icon(Icons.restaurant_menu), label: "Carte"),
-                NavigationDestination(
-                    icon: Consumer<CartModel>(
-                      builder: (BuildContext context, CartModel cart,
-                          Widget? child) {
-                        return Badge.count(
-                          count: cart.itemCount(),
-                          child: const Icon(Icons.shopping_cart),
-                        );
-                      },
-                    ),
-                    label: "Panier"),
-                NavigationDestination(
-                    icon: Icon(Icons.co_present_outlined), label: "Profil"),
-              ],
-              onDestinationSelected: onDestinationChange,
-              selectedIndex: _open,
-            ),
-          ),
-        ));
+        )));
   }
 }

@@ -9,8 +9,10 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'package:open_bar_pocket/api/responses/last_orders_response.dart';
 import 'package:open_bar_pocket/models/account.dart';
 import 'package:open_bar_pocket/models/category.dart';
+import 'package:open_bar_pocket/models/order.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/models/product.dart';
 
@@ -209,6 +211,29 @@ class ApiController {
       } else {
         throw Exception(
             "Failed to get account, status: ${resp.statusCode}, body: ${resp.data}");
+      }
+    });
+  }
+
+  Future<LastOrdersResponse> getLastOrders({int pageNumber = 0, int limit = 14, String state = "all"}) {
+    if (!isReady()) {
+      throw Exception("ApiController is not ready yet!");
+    }
+
+    Map<String, dynamic> params = {
+      "page": pageNumber,
+      "limit": limit,
+    };
+    if (state != "all") {
+      params["state"] = state;
+    }
+
+    return _httpClient.get(_config!.getApiUrlFor("account/transactions"), queryParameters: params).then((resp) {
+      if (resp.statusCode == 200) {
+        return LastOrdersResponse.fromJson(resp.data);
+      } else {
+        throw Exception(
+            "Failed to get orders, status: ${resp.statusCode}, body: ${resp.data}");
       }
     });
   }
