@@ -8,6 +8,7 @@ import 'package:input_quantity/input_quantity.dart';
 import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account_notifier.dart';
 import 'package:open_bar_pocket/models/cart.dart';
+import 'package:open_bar_pocket/models/orders_notifier.dart';
 import 'package:open_bar_pocket/models/price_role.dart';
 import 'package:open_bar_pocket/models/product.dart';
 import 'package:open_bar_pocket/pages/pin.dart';
@@ -54,6 +55,11 @@ class CartTab extends StatelessWidget {
               content: Text("Transaction réussie !"),
             ),
           );
+
+          _api.getLastOrders().then((value) {
+            context.read<OrdersNotifier>().set(value.orders);
+          });
+
           context.read<CartModel>().clear();
         });
     } catch (e) {

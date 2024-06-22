@@ -207,7 +207,7 @@ class ApiController {
 
     return _httpClient.get(_config!.getApiUrlFor("account")).then((resp) {
       if (resp.statusCode == 200) {
-        return Account.fromJson(resp.data);
+        return Account.fromJson(resp.data["account"]);
       } else {
         throw Exception(
             "Failed to get account, status: ${resp.statusCode}, body: ${resp.data}");

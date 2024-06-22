@@ -37,6 +37,23 @@ class _ShoppingState extends State<ShoppingPage> {
     });
   }
 
+  void refreshContext() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Rafraichissement en cours..."),
+    ));
+
+    _api.getMyAccount().then((value) {
+      _acc_notif.set(value);
+      _api.getLastOrders().then((value) {
+        _orders_notif.set(value.orders);
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Rafraichissement terminé !"),
+        ));
+      });
+    });
+  }
+
   Widget? childBuild() {
     switch (_open) {
       case 0:
@@ -65,6 +82,42 @@ class _ShoppingState extends State<ShoppingPage> {
               appBar: AppBar(
                 title: Text('OpenBar'),
                 elevation: 8,
+                leading: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Consumer<AccountNotifier>(
+                    builder: (BuildContext context, AccountNotifier acc,
+                        Widget? child) {
+                      return CircleAvatar(
+                        backgroundImage: NetworkImage(acc.account.google_picture),
+                      );
+                    },
+                  )
+                ),
+                actions: ((){
+                  if (_open == 2) {
+                    return [
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: refreshContext,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ];
+                  } else {
+                    return [
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ];
+                  }
+                })(),
               ),
               body: childBuild(),
               bottomNavigationBar: NavigationBar(

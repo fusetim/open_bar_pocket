@@ -65,7 +65,7 @@ class CartModel extends ChangeNotifier {
   }
 
   void removeAll() {
-    items.clear();
+    _items.clear();
     _count = 0;
     notifyListeners();
   }
