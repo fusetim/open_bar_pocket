@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account.dart';
 import 'package:open_bar_pocket/pages/shop/structure.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthPage extends StatefulWidget {
   final ApiController _apiController;
@@ -33,6 +34,48 @@ class AuthPageState extends State<AuthPage> {
       ..text = "https://bar.telecomnancy.net";
     _cardNumberController = TextEditingController();
     _pinController = TextEditingController();
+
+    _loadCredentials();
+  }
+
+  void _loadCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (prefs.containsKey("server")) {
+        _serverController.text = prefs.getString("server")!;
+      }
+      if (prefs.containsKey("cardNumber")) {
+        _cardNumberController.text = prefs.getString("cardNumber")!;
+      }
+      if (prefs.containsKey("pin") && prefs.containsKey("cardNumber") && prefs.containsKey("server")) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Connexion automatique en cours..."),
+        ));
+        _connect(
+          prefs.getString("server")!,
+          prefs.getString("cardNumber")!,
+          prefs.getString("pin")!
+        );
+        _authRequest!.then((account) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Connecté en tant que ${account.getFullName()}."),
+          ));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ShoppingPage(_apiController, account: account),
+            ),
+          );
+        }).catchError((error) {
+          log("Auth error: $error");
+          prefs.remove("pin");
+        }).whenComplete(() {
+          setState(() {
+            _authRequest = null;
+          });
+        });
+      }
+    });
   }
 
   @override
@@ -41,6 +84,14 @@ class AuthPageState extends State<AuthPage> {
     _serverController.dispose();
     _cardNumberController.dispose();
     _pinController.dispose();
+  }
+
+  void _connect(String serverUri, String cardNumber, String pin) {
+    _apiController.setBaseUri(serverUri);
+    _authRequest = _apiController.updateApiConfig().then((_) {
+      return _apiController.connectByCard(
+          cardNumber.toLowerCase(), pin);
+    });
   }
 
   void connect() {
@@ -64,13 +115,23 @@ class AuthPageState extends State<AuthPage> {
     }
     // TODO: Check that the card number is hexadecimal.
     setState(() {
-      _apiController.setBaseUri(_serverController.text);
-      _authRequest = _apiController.updateApiConfig().then((_) {
-        return _apiController.connectByCard(
-            _cardNumberController.text.toLowerCase(), _pinController.text);
-      });
+      _connect(
+        _serverController.text,
+        _cardNumberController.text,
+        _pinController.text
+      );
     });
     _authRequest!.then((account) {
+      final prefs = SharedPreferences.getInstance();
+      final server = _serverController.text;
+      final cardNumber = _cardNumberController.text.toLowerCase();
+      final pin = _pinController.text;
+      prefs.then((prefs) {
+        prefs.setString("server", server);
+        prefs.setString("cardNumber", cardNumber);
+        prefs.setString("pin", pin);
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Connecté en tant que ${account.getFullName()}."),
       ));
@@ -88,6 +149,7 @@ class AuthPageState extends State<AuthPage> {
     }).whenComplete(() {
       setState(() {
         _authRequest = null;
+        _pinController.clear();
       });
     });
   }
