@@ -33,6 +33,7 @@
                 <!-- Accepts URIs that begin with openbarpocket://host -->
                 <data android:scheme="openbarpocket" />
             </intent-filter>
+
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
@@ -61,4 +62,7 @@
             <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
     </queries>
+
+    <!-- NFC Permission -->
+    <uses-permission android:name="android.permission.NFC" />
 </manifest>

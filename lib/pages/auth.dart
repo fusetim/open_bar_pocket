@@ -1,8 +1,10 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:open_bar_pocket/api/controller.dart';
 import 'package:open_bar_pocket/models/account.dart';
+import 'package:open_bar_pocket/pages/nfc_card.dart';
 import 'package:open_bar_pocket/pages/shop/structure.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,15 +49,14 @@ class AuthPageState extends State<AuthPage> {
       if (prefs.containsKey("cardNumber")) {
         _cardNumberController.text = prefs.getString("cardNumber")!;
       }
-      if (prefs.containsKey("pin") && prefs.containsKey("cardNumber") && prefs.containsKey("server")) {
+      if (prefs.containsKey("pin") &&
+          prefs.containsKey("cardNumber") &&
+          prefs.containsKey("server")) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Connexion automatique en cours..."),
         ));
-        _connect(
-          prefs.getString("server")!,
-          prefs.getString("cardNumber")!,
-          prefs.getString("pin")!
-        );
+        _connect(prefs.getString("server")!, prefs.getString("cardNumber")!,
+            prefs.getString("pin")!);
         _authRequest!.then((account) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("Connecté en tant que ${account.getFullName()}."),
@@ -63,7 +64,8 @@ class AuthPageState extends State<AuthPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ShoppingPage(_apiController, account: account),
+              builder: (context) =>
+                  ShoppingPage(_apiController, account: account),
             ),
           );
         }).catchError((error) {
@@ -89,8 +91,7 @@ class AuthPageState extends State<AuthPage> {
   void _connect(String serverUri, String cardNumber, String pin) {
     _apiController.setBaseUri(serverUri);
     _authRequest = _apiController.updateApiConfig().then((_) {
-      return _apiController.connectByCard(
-          cardNumber.toLowerCase(), pin);
+      return _apiController.connectByCard(cardNumber.toLowerCase(), pin);
     });
   }
 
@@ -115,11 +116,8 @@ class AuthPageState extends State<AuthPage> {
     }
     // TODO: Check that the card number is hexadecimal.
     setState(() {
-      _connect(
-        _serverController.text,
-        _cardNumberController.text,
-        _pinController.text
-      );
+      _connect(_serverController.text, _cardNumberController.text,
+          _pinController.text);
     });
     _authRequest!.then((account) {
       final prefs = SharedPreferences.getInstance();
@@ -195,17 +193,38 @@ class AuthPageState extends State<AuthPage> {
                       controller: _serverController,
                     ),
                     SizedBox(height: 16),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: "Numéro de carte",
-                        hintText: "Entrez votre numéro de carte",
-                        prefixIcon: Icon(Icons.credit_card),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
+                    Row(
+                      children: [
+                        Expanded(child: TextFormField(
+                          decoration: InputDecoration(
+                            labelText: "Numéro de carte",
+                            hintText: "Entrez votre numéro de carte",
+                            prefixIcon: Icon(Icons.credit_card),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          keyboardType: TextInputType.text,
+                          controller: _cardNumberController,
+                        )),
+                        const SizedBox(width: 8),
+                        IconButton.outlined(
+                          iconSize: 38.0,
+                          padding: EdgeInsets.all(12.0),
+                          style: ButtonStyle(
+                            shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0))),
+                          ),
+                          onPressed: () {
+                            startSession(context: context).then((cardNumber) {
+                              if (cardNumber != null) {
+                                _cardNumberController.text = cardNumber;
+                              }
+                            });
+                          },
+                          icon: const Icon(Icons.nfc),
                         ),
-                      ),
-                      keyboardType: TextInputType.text,
-                      controller: _cardNumberController,
+                      ],
                     ),
                     SizedBox(height: 16),
                     TextFormField(
